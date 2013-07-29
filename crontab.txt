@@ -1,0 +1,1 @@
+0 * * * * node /home/s/Dev/manga-release-aggregator/app.js
