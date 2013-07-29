@@ -1,0 +1,2 @@
+manga-releases-aggregator
+=========================
