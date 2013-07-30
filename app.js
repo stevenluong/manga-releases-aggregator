@@ -1,20 +1,30 @@
-var YQL = require("yql");
 var nodemailer = require("nodemailer");
 var redis = require("redis");
+var SourceManager = require("./sourceManager.js");
+var Chrono = require("./chrono.js");
 var client = redis.createClient();
-var source = new Source("www.mangareader.net", "/latest",".updates td a.chaptersrec");
+
 var chrono = new Chrono();
 
 var newReleases = new Array();
 var processing = 0;
-checkNewReleases(function() {
-	console.log(processing);
-	if (processing == 1) {
-		sendMail();
-	}
-	processing--;
-});
 
+var main = function (){
+	var sourceManager = new SourceManager();
+	sourceManager.getLastReleases(function(releases){
+		console.log("nb of releases :");
+		console.log(Object.keys(releases).length);
+	});	
+	//sourceManager.tmpGetLastReleases();
+	//	if (processing == 1) {
+	//		sendMail();
+	//	}
+	//	processing--;
+	client.quit();
+}
+if(require.main===module){
+	main();
+}
 function printNewReleases(newReleases) {
 	console.log("-printNewReleases");
 	var print = "<ul>";
@@ -76,7 +86,7 @@ function getLastRelease(releaseName, callback) {
 
 function checkNewReleases(callback) {
 	console.log("-checkNewReleases");
-	new YQL.exec('select * from data.html.cssselect where url="' + source.url + '" and css="'+source.css+'"', function(response) {
+	new yql.exec('select * from data.html.cssselect where url="' + source.url + '" and css="'+source.css+'"', function(response) {
 		if (false) {
 			var chapter = 10;
 			client.set("Noblesse", chapter, function(err, reply) {
@@ -137,59 +147,6 @@ function checkNewReleases(callback) {
 	});
 }
 
-function Chrono() {
-	this.date = new Date();
-	this.restart = function() {
-		this.date = new Date();
-	}
-	this.getTime = function() {
-		return new Date().getTime() - this.date.getTime();
-	}
-}
 
-function Release(a, source) {
-	this.manga = getManga(a.content);
-	this.chapter = getChapter(a.content);
-	this.source = source;
-	this.url = this.source.root + a.href;
-	this.print = function() {
-		console.log("-release.print");
-		var print = "<a href='"+this.url+"'>"+this.manga+"(" + this.chapter + ")"+"</a>";
-		//var print = "manga:" + this.manga + " chapter:" + this.chapter + " url:" + this.url + ";";
-		console.log(print);
-		return print;
-	}
-	//console.log(this);
-	function getChapter(content) {
-		var split = content.split(' ');
-		var chapter = split[split.length - 1];
-		//console.log("release:"+release);
-		return chapter;
-	}
 
-	function getManga(content) {
-		var split = content.split(' ');
-		split.pop();
-		var manga = "";
-		split.forEach(function(s, index) {
-			//console.log(s);
-			//console.log(index);
-			if (index == split.length - 1) {
-				manga += s;
-			} else {
-				manga += s + " ";
-			}
-		});
-		//console.log("name:"+name);
-		return manga;
-	}
 
-}
-
-function Source(root, path,css) {
-	this.root = root;
-	//path listing all the releases to fetch
-	this.url = this.root + path;
-	this.css = css;
-	//console.log(this);
-}
