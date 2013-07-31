@@ -14,44 +14,161 @@ var main = function (){
 	sourceManager.getLastReleases(function(releases){
 		console.log("nb of releases :");
 		console.log(Object.keys(releases).length);
+		getNewReleases(releases,function(newReleases){
+			console.log("new releases :");
+			console.log(newReleases.length);
+			warnUsers(newReleases,function(){
+				console.log("users warned");
+				client.quit();
+
+			});
+		});
 	});	
 	//sourceManager.tmpGetLastReleases();
 	//	if (processing == 1) {
 	//		sendMail();
 	//	}
 	//	processing--;
-	client.quit();
 }
 if(require.main===module){
 	main();
 }
-function printNewReleases(newReleases) {
+var warnUsers = function(releases,callback){
+	console.log("-warnUsers");
+	//console.log(releases);
+	if(releases.length>0){
+		getUsers(function(users){
+				users.forEach(function(user){
+					releases.forEach(function(release){
+						var manga = release.manga;
+						if(user.mangas.indexOf(manga)>-1){
+							user.releases.push(release);
+						}
+					});
+				});
+				console.log(users);
+				sendMails(users,function(){
+					callback();
+				});
+		});
+	}
+	else{
+		callback();
+	}
+};
+
+var getUsers = function(callback){
+	console.log("-getUsers");
+	var users = new Array();
+	var user1 = {
+		email:"ste.luong@gmail.com",
+		releases: new Array(),
+		mangas:["Tower of God","Naruto","Bleach","Noblesse","The Breaker: New Waves","Baby Steps"]};
+	var user2 = {
+		email:"toto",
+		releases: new Array(),
+		mangas:["Tower of God","Noblesse"]};
+	//console.log(user);
+	users.push(user1);
+	//users.push(user2);
+	
+	callback(users);
+}
+var getNewReleases = function(releases,callback){
+	console.log("-getNewReleases");
+	releases = filterReleases(releases);
+	var newReleases = new Array();
+	var newReleaseLength = 0;
+	releases.forEach(function(release){
+		newReleaseLength++;
+		//console.log("newReleaseLength a:"+newReleaseLength);	
+		console.log(release);	
+		//TODO Verify in DB
+		isNewRelease(release,function(isNew){
+			newReleaseLength--;
+			//console.log("newReleaseLength b:"+newReleaseLength);	
+			if(isNew){
+				newReleases.push(release);
+			}
+			if(newReleaseLength==0){
+				callback(newReleases);
+			}
+		});
+	});
+	return newReleases;
+}
+var filterReleases = function(releases){
+	var filteredReleases = new Array();
+	Object.keys(releases).forEach(function(key){
+		var release = releases[key];
+		if(isSelectedManga(release)){
+			filteredReleases.push(release);
+		};
+	});
+	return filteredReleases;
+}
+var isNewRelease= function(release,callback){
+	console.log("-isNewRelease");
+	var manga = release.manga;
+	var chapter = release.chapter;
+	//console.log(manga);
+	//console.log(chapter);
+	client.get(manga,function(err,resp){
+		//console.log("err:"+err);
+		//console.log("resp:"+resp);
+		if(resp<chapter){
+			callback(true);
+			client.set(manga,chapter,function(err1,resp1){
+				console.log(manga+" "+chapter+" set in DB");
+			});
+		}
+		else{
+			callback(false);
+		}
+	});
+}
+//TODO improve with user manga relationship
+var isSelectedManga = function(release){
+	//return true;
+	if (release.manga == "Noblesse" 
+							|| release.manga == "Naruto" 
+							|| release.manga == "Tower of God" 
+							|| release.manga == "The Breaker: New Waves" 
+							|| release.manga == "Baby Steps" 
+							|| release.manga == "Bleach") {
+		return true;
+	}
+	else{
+		return false;
+	}
+};
+function toHTML(newReleases) {
 	console.log("-printNewReleases");
 	var print = "<ul>";
 	newReleases.forEach(function(release) {
-		print += "<li>" + release.print() + "</li>";
+		print += "<li>" + release.toHTML() + "</li>";
 	});
 	print += "</ul>";
 	return print;
 }
-
-function sendMail() {
-	console.log("-sendMail");
+var sendMails =function(users,callback) {
+	console.log("-sendMails");
 	var smtpTransport = nodemailer.createTransport("SMTP", {
 		service : "Gmail",
 		auth : {
-			user : "",
+			user : "slapps.paris",
 			pass : ""
 		}
 	});
-	var mailOptions = {
-		from : "Slapps Server <slapps.paris@gmail.com>", // sender address
-		to : "ste.luong@gmail.com", // list of receivers
-		subject : "New Releases !", // Subject line
-		html : "<h1>New Releases</h1><b>" + printNewReleases(newReleases) + "</b>" // html body
-	}
-
-	if (false) {
+	console.log(users);
+	users.forEach(function(user){
+		var mailOptions = {
+			from : "Steven <ste.luong@gmail.com>", // sender address
+			to : user.email, // list of receivers
+			subject : "New Releases !", // Subject line
+			html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
+		}
+		console.log(mailOptions);
 		smtpTransport.sendMail(mailOptions, function(error, response) {
 			if (error) {
 				console.log(error);
@@ -59,94 +176,11 @@ function sendMail() {
 				console.log("Message sent: " + response.message);
 			}
 		});
-	}
-	console.log(mailOptions);
-	smtpTransport.close();
-}
-
-function updateDB(release, callback) {
-	console.log("-updateDB");
-	//console.log(release);
-	client.set(release.manga, release.chapter, function(err, resp) {
-		//console.log("err:"+err);
-		//console.log("resp:"+resp);
+		smtpTransport.close();
 		callback();
 	});
+	
 }
-
-function getLastRelease(releaseName, callback) {
-	console.log("-getLastRelease");
-	//console.log("releaseName:"+releaseName);
-	client.get(releaseName, function(err, resp) {
-		//console.log("error:" + err)
-		console.log("Stored release of " + releaseName + ":" + resp);
-		callback(resp);
-	});
-}
-
-function checkNewReleases(callback) {
-	console.log("-checkNewReleases");
-	new yql.exec('select * from data.html.cssselect where url="' + source.url + '" and css="'+source.css+'"', function(response) {
-		if (false) {
-			var chapter = 10;
-			client.set("Noblesse", chapter, function(err, reply) {
-				console.log("Noblesse : " + chapter);
-			});
-			client.set("Naruto", chapter, function(err, reply) {
-				console.log("Naruto : " + chapter);
-			});
-		}
-		//console.log("end parse : "+chrono.getTime());
-
-		if (response.query == null) {
-			console.log("query null");
-			return false;
-		}
-		if (response.query.results == null) {
-			console.log("results null");
-			return false;
-		}
-		var results = response.query.results.results;
-		var length = 0;
-		results.a.forEach(function(a) {
-			length++;
-			//console.log(length);
-			var release = new Release(a, source);
-			//console.log(release)
-			//console.log(release.manga);
-			if (release.manga == "Noblesse" 
-							|| release.manga == "Naruto" 
-							|| release.manga == "Tower of God" 
-							|| release.manga == "The Breaker: New Waves" 
-							|| release.manga == "Baby Steps" 
-							|| release.manga == "Bleach") {
-				
-				console.log(release)
-				//console.log("Noblesse release retrieved");
-				//console.log(release);
-				getLastRelease(release.manga, function(n) {
-					//console.log("n:"+n)
-					if (release.chapter > n) {
-						processing++;
-						newReleases.push(release);
-						updateDB(release, function() {
-							//getLastRelease(release.manga, function() {
-							//});
-							if (length == results.a.length) {
-								callback();
-							}
-						});
-					}
-				});
-			}
-			//console.log("actual length:" + length);
-
-		});
-		//console.log("max length" + results.a.length);
-
-	});
-}
-
 
 
 
