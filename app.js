@@ -11,24 +11,24 @@ var processing = 0;
 
 var main = function (){
 	var sourceManager = new SourceManager();
-	sourceManager.getLastReleases(function(releases){
-		console.log("nb of releases :");
-		console.log(Object.keys(releases).length);
-		getNewReleases(releases,function(newReleases){
-			console.log("new releases :");
-			console.log(newReleases.length);
-			warnUsers(newReleases,function(){
-				console.log("users warned");
-				client.quit();
-
-			});
-		});
-	});	
-	//sourceManager.tmpGetLastReleases();
-	//	if (processing == 1) {
-	//		sendMail();
-	//	}
-	//	processing--;
+	if(true){
+  	sourceManager.getLastReleases(function(releases){
+  		console.log("nb of releases :");
+  		console.log(Object.keys(releases).length);
+  		getNewReleases(releases,function(newReleases){
+  			console.log("new releases :");
+  			console.log(newReleases.length);
+  			warnUsers(newReleases,function(){
+  				console.log("users warned");
+  				client.quit();
+  
+  			});
+  		});
+  	});	
+	}
+	else{//DEBUG
+		sourceManager.tmpGetLastReleases();
+	}
 }
 if(require.main===module){
 	main();

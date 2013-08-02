@@ -1,1 +1,1 @@
-0 * * * * node /home/s/Dev/manga-release-aggregator/app.js
+* * * * * node /prod/manga-releases-aggregator/app.js > /home/s/tmp/log/crontab 2>&1
