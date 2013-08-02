@@ -61,11 +61,11 @@ var getUsers = function(callback){
 	console.log("-getUsers");
 	var users = new Array();
 	var user1 = {
-		email:"ste.luong@gmail.com",
+		email:"User1",
 		releases: new Array(),
 		mangas:["Tower of God","Naruto","Bleach","Noblesse","The Breaker: New Waves","Baby Steps"]};
 	var user2 = {
-		email:"toto",
+		email:"user2",
 		releases: new Array(),
 		mangas:["Tower of God","Noblesse"]};
 	//console.log(user);
@@ -156,14 +156,14 @@ var sendMails =function(users,callback) {
 	var smtpTransport = nodemailer.createTransport("SMTP", {
 		service : "Gmail",
 		auth : {
-			user : "slapps.paris",
+			user : "User",
 			pass : ""
 		}
 	});
 	console.log(users);
 	users.forEach(function(user){
 		var mailOptions = {
-			from : "Steven <ste.luong@gmail.com>", // sender address
+			from : "Sender", // sender address
 			to : user.email, // list of receivers
 			subject : "New Releases !", // Subject line
 			html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
