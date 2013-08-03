@@ -4,6 +4,7 @@ var SourceManager = require("./sourceManager.js");
 var Chrono = require("./chrono.js");
 var Logger = require("./logger.js");
 var Config = require("./config.js");
+var config = new Config();
 var client = redis.createClient();
 
 var logger = new Logger(["debug","trace","info","critic"]);
@@ -65,23 +66,23 @@ var getUsers = function(callback){
 	logger.trace("getUsers");
 	var users = new Array();
 	var user1 = {
-		email:"User1",
+		email:config.user1Email,
 		releases: new Array(),
 		mangas:["Tower of God","Naruto","Bleach","Noblesse","The Breaker: New Waves","Baby Steps"]};
 	var user2 = {
-		email:"user2",
+		email:config.user2Email,
 		releases: new Array(),
 		mangas:["Tower of God","Noblesse"]};
-	var user3 = {
-		email:"user3",
-		releases: new Array(),
-		mangas:["Baby Steps","Tower of God","Noblesse"]};
+	//var user3 = {
+	//	email:"user3",
+	//	releases: new Array(),
+	//	mangas:["Baby Steps","Tower of God","Noblesse"]};
 	logger.debug(user1);
 	logger.debug(user2);
-	logger.debug(user3);
+	//logger.debug(user3);
 	users.push(user1);
 	users.push(user2);
-	users.push(user3);
+	//users.push(user3);
 	
 	callback(users);
 }
@@ -168,8 +169,8 @@ var sendMails =function(users,callback) {
 	var smtpTransport = nodemailer.createTransport("SMTP", {
 		service : "Gmail",
 		auth : {
-			user : "User",
-			pass : ""
+			user : config.appEmail,
+			pass : config.appEmailPassword
 		}
 	});
 	var length = 0;
@@ -177,7 +178,7 @@ var sendMails =function(users,callback) {
 		length++;
 		if(user.releases.length>0){
 			var mailOptions = {
-				from : "Sender", // sender address
+				from : config.senderEmail, // sender address
 				to : user.email, // list of receivers
 				subject : "New Releases !", // Subject line
 				html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
