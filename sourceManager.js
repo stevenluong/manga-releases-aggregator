@@ -10,6 +10,10 @@ module.exports = function SourceManager() {
 	var source2 = new Source("http://www.mangahere.com", "/latest/",".manga_updates dl dd a",false);
 	var source3 = new Source("http://www.mangabird.com", "",".lastest li a",true);
 	var source4 = new Source("http://mangafox.me", "/releases/","#updates li div a",false);
+	sources.push(source1);
+	sources.push(source2);
+	sources.push(source3);
+	sources.push(source4);
 	this.getLastReleases = function(callback){
 	  var length = 0;
 		sources.forEach(function(source){
@@ -25,7 +29,7 @@ module.exports = function SourceManager() {
 		if(false){//DEBUG
 			var tmpSource = new TmpSource();
 			tmpSource.getLastReleases(function(){
-				console.log("done");
+				logger.debug("done");
 			});
 		}else{
 			var length = 0;
@@ -48,10 +52,9 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 	this.css = css;
 	this.getLastReleases = function(callback){
 		logger.trace("getLastReleases");
-		logger.debug(this);
 		new yql.exec('select * from data.html.cssselect where url="' + this.indexUrl + '" and css="'+this.css+'"', function(response) {
 			if(response==null||response.query==null||response.query.results==null){
-				logger.critic("http request error");
+				logger.critic("http request error on : "+root);
 				return false;
 			}
 			var results = response.query.results.results;
@@ -60,7 +63,7 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 			var length = 0;
 			results.a.forEach(function(a){
 				length++;
-				//console.log(a);
+				//logger.debug(a);
 				var chapter = getChapter(a.content);
 				var manga = getManga(a.content);
 				//console.log("root:"+root);
@@ -68,9 +71,16 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 				//console.log(isRelativePath);
 				//console.log(isRelativePath==true);
 				var url = isRelativePath==true?root+a.href:a.href;
+				//var intRegex = /^\d+$/;
 				var release = new Release(manga,chapter,url)
+				//if(!intRegex.test(chapter)){
+				if(release.chapter=="Manga"||release.chapter=="Manhwa"){
+					//logger.debug("SPECIAL:"+chapter);
+					//logger.debug(release);
+				}else{
+					releases[release.getId()]=release;
+				}
 				//console.log(release);
-				releases[release.getId()]=release;
 				if(results.a.length==length){
 					//console.log("getLastRelease Done 1")
 					callback();
@@ -78,7 +88,7 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 			});
 		});
 	}
-	sources.push(this);
+	logger.debug(this);
 }
 var getManga = function(description){
 	var split = description.split(' ');

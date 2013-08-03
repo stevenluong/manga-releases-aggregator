@@ -1,21 +1,30 @@
 var nodemailer = require("nodemailer");
+
 var redis = require("redis");
-var SourceManager = require("./sourceManager.js");
-var Chrono = require("./chrono.js");
-var Logger = require("./logger.js");
-var Config = require("./config.js");
-var config = new Config();
 var client = redis.createClient();
 
-var logger = new Logger();
+var SourceManager = require("./sourceManager.js");
+var sourceManager = new SourceManager();
+
+var Chrono = require("./chrono.js");
 var chrono = new Chrono();
+
+var Logger = require("./logger.js");
+var logger = new Logger();
+
+var Config = require("./config.js");
+var config = new Config();
+
+var UserManager = require("./userManager.js");
+var userManager = new UserManager();
+
+
 
 var newReleases = new Array();
 var processing = 0;
 
 var main = function (){
 	logger.info("start");
-	var sourceManager = new SourceManager();
 	if(true){
   	sourceManager.getLastReleases(function(releases){
   		logger.info("nb of distinct releases found on sources : "+Object.keys(releases).length);
@@ -44,7 +53,7 @@ if(require.main===module){
 var warnUsers = function(releases,callback){
 	logger.trace("warnUsers");
 	if(releases.length>0){
-		getUsers(function(users){
+		userManager.getUsers(function(users){
 				users.forEach(function(user){
 					releases.forEach(function(release){
 						var manga = release.manga;
@@ -63,30 +72,6 @@ var warnUsers = function(releases,callback){
 	}
 };
 
-var getUsers = function(callback){
-	logger.trace("getUsers");
-	var users = new Array();
-	var user1 = {
-		email:config.user1Email,
-		releases: new Array(),
-		mangas:["Tower of God","Naruto","Bleach","Noblesse","The Breaker: New Waves","Baby Steps"]};
-	var user2 = {
-		email:config.user2Email,
-		releases: new Array(),
-		mangas:["Tower of God","Noblesse"]};
-	//var user3 = {
-	//	email:"user3",
-	//	releases: new Array(),
-	//	mangas:["Baby Steps","Tower of God","Noblesse"]};
-	logger.debug(user1);
-	logger.debug(user2);
-	//logger.debug(user3);
-	users.push(user1);
-	users.push(user2);
-	//users.push(user3);
-	
-	callback(users);
-}
 var getNewReleases = function(releases,callback){
 	logger.trace("getNewReleases");
 	releases = filterReleases(releases);
@@ -108,11 +93,12 @@ var getNewReleases = function(releases,callback){
 	});
 	return newReleases;
 }
+//TODO Delete this filter
 var filterReleases = function(releases){
 	var filteredReleases = new Array();
 	Object.keys(releases).forEach(function(key){
 		var release = releases[key];
-		if(isSelectedManga(release)){
+		if(config.selectedMangas.indexOf(release.manga)>-1){
 			filteredReleases.push(release);
 		};
 	});
@@ -141,21 +127,6 @@ var isNewRelease= function(release,callback){
 		}
 	});
 }
-//TODO improve with user manga relationship
-var isSelectedManga = function(release){
-	//return true;
-	if (release.manga == "Noblesse" 
-							|| release.manga == "Naruto" 
-							|| release.manga == "Tower of God" 
-							|| release.manga == "The Breaker: New Waves" 
-							|| release.manga == "Baby Steps" 
-							|| release.manga == "Bleach") {
-		return true;
-	}
-	else{
-		return false;
-	}
-};
 function toHTML(newReleases) {
 	logger.trace("printNewReleases");
 	var print = "<ul>";
