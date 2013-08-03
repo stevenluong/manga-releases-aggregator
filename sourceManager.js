@@ -1,6 +1,7 @@
 var yql = require("yql");
 var Release = require("./release.js");
-
+var Logger = require("./logger.js");
+var logger = new Logger(["debug","trace","info","critic"]);
 var releases = {};
 var sources = new Array();
 
@@ -10,12 +11,10 @@ module.exports = function SourceManager() {
 	var source3 = new Source("http://www.mangabird.com", "",".lastest li a",true);
 	var source4 = new Source("http://mangafox.me", "/releases/","#updates li div a",false);
 	this.getLastReleases = function(callback){
-		//console.log(sources.length);
 	  var length = 0;
 		sources.forEach(function(source){
 			source.getLastReleases(function(){
 				length++;	
-				console.log(sources.length +"-"+ length);
 				if(length==sources.length){
 					callback(releases);
 				}
@@ -48,12 +47,16 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 	this.indexUrl = this.root + relativeUrl;
 	this.css = css;
 	this.getLastReleases = function(callback){
-		console.log("-getLastReleases");
-		console.log(this);
+		logger.trace("getLastReleases");
+		logger.debug(this);
 		new yql.exec('select * from data.html.cssselect where url="' + this.indexUrl + '" and css="'+this.css+'"', function(response) {
+			if(response==null||response.query==null||response.query.results==null){
+				logger.critic("http request error");
+				return false;
+			}
 			var results = response.query.results.results;
-			//console.log(results);
-			console.log(root+" results nb : "+results.a.length);	
+			//logger.debug(results);
+			logger.info("results found on "+root+" : "+results.a.length);
 			var length = 0;
 			results.a.forEach(function(a){
 				length++;
@@ -106,7 +109,7 @@ var TmpSource = function(){
 			//console.log(response);	
 			//console.log(response.query.results.results);	
 			var results = response.query.results.results;	
-			console.log("mangafox"+" results nb : "+results.a.length);	
+			logger.info("mangafox"+" results nb : "+results.a.length);	
 			var length = 0
 			results.a.forEach(function(a){
 				length++;
@@ -116,7 +119,7 @@ var TmpSource = function(){
 				var url = a.href;
 				var release = new Release(manga,chapter,url);
 				releases[release.getId()]=release;
-				console.log(release);
+				//console.log(release);
 				//console.log(length);
 				//console.log(results.a.length);
 				if(length == results.a.length){

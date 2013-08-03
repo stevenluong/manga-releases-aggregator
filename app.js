@@ -2,8 +2,11 @@ var nodemailer = require("nodemailer");
 var redis = require("redis");
 var SourceManager = require("./sourceManager.js");
 var Chrono = require("./chrono.js");
+var Logger = require("./logger.js");
+var Config = require("./config.js");
 var client = redis.createClient();
 
+var logger = new Logger(["debug","trace","info","critic"]);
 var chrono = new Chrono();
 
 var newReleases = new Array();
@@ -13,16 +16,19 @@ var main = function (){
 	var sourceManager = new SourceManager();
 	if(true){
   	sourceManager.getLastReleases(function(releases){
-  		console.log("nb of releases :");
-  		console.log(Object.keys(releases).length);
+  		logger.info("nb of distinct releases found on sources : "+Object.keys(releases).length);
   		getNewReleases(releases,function(newReleases){
-  			console.log("new releases :");
-  			console.log(newReleases.length);
-  			warnUsers(newReleases,function(){
-  				console.log("users warned");
-  				client.quit();
-  
-  			});
+				var newReleasesNb = newReleases.length;
+  			logger.info("nb of new releases : "+newReleasesNb);
+				if(newReleasesNb>0){
+					warnUsers(newReleases,function(){
+						logger.info("users warned");
+					});
+				}else{
+					logger.info("no need to warn users");
+				}
+  			client.quit();
+				logger.info("end");
   		});
   	});	
 	}
@@ -34,8 +40,7 @@ if(require.main===module){
 	main();
 }
 var warnUsers = function(releases,callback){
-	console.log("-warnUsers");
-	//console.log(releases);
+	logger.trace("warnUsers");
 	if(releases.length>0){
 		getUsers(function(users){
 				users.forEach(function(user){
@@ -46,7 +51,6 @@ var warnUsers = function(releases,callback){
 						}
 					});
 				});
-				console.log(users);
 				sendMails(users,function(){
 					callback();
 				});
@@ -58,7 +62,7 @@ var warnUsers = function(releases,callback){
 };
 
 var getUsers = function(callback){
-	console.log("-getUsers");
+	logger.trace("getUsers");
 	var users = new Array();
 	var user1 = {
 		email:"User1",
@@ -68,25 +72,30 @@ var getUsers = function(callback){
 		email:"user2",
 		releases: new Array(),
 		mangas:["Tower of God","Noblesse"]};
-	//console.log(user);
+	var user3 = {
+		email:"user3",
+		releases: new Array(),
+		mangas:["Baby Steps","Tower of God","Noblesse"]};
+	logger.debug(user1);
+	logger.debug(user2);
+	logger.debug(user3);
 	users.push(user1);
-	//users.push(user2);
+	users.push(user2);
+	users.push(user3);
 	
 	callback(users);
 }
 var getNewReleases = function(releases,callback){
-	console.log("-getNewReleases");
+	logger.trace("getNewReleases");
 	releases = filterReleases(releases);
 	var newReleases = new Array();
 	var newReleaseLength = 0;
 	releases.forEach(function(release){
 		newReleaseLength++;
-		//console.log("newReleaseLength a:"+newReleaseLength);	
-		console.log(release);	
-		//TODO Verify in DB
+		logger.info("release found: "+release.manga+" - "+release.chapter);	
+		logger.debug(release);	
 		isNewRelease(release,function(isNew){
 			newReleaseLength--;
-			//console.log("newReleaseLength b:"+newReleaseLength);	
 			if(isNew){
 				newReleases.push(release);
 			}
@@ -108,7 +117,7 @@ var filterReleases = function(releases){
 	return filteredReleases;
 }
 var isNewRelease= function(release,callback){
-	console.log("-isNewRelease");
+	logger.trace("isNewRelease");
 	var manga = release.manga;
 	var chapter = release.chapter;
 	//console.log(manga);
@@ -116,10 +125,13 @@ var isNewRelease= function(release,callback){
 	client.get(manga,function(err,resp){
 		//console.log("err:"+err);
 		//console.log("resp:"+resp);
+		logger.info("Last release in DB : "+manga+" - "+resp);
 		if(resp<chapter){
-			callback(true);
 			client.set(manga,chapter,function(err1,resp1){
-				console.log(manga+" "+chapter+" set in DB");
+				callback(true);
+				//console.log("err1:"+err1);
+				//console.log("resp1:"+resp1);
+				logger.info("new release : "+manga+" - "+chapter + " (DB updated)");
 			});
 		}
 		else{
@@ -143,7 +155,7 @@ var isSelectedManga = function(release){
 	}
 };
 function toHTML(newReleases) {
-	console.log("-printNewReleases");
+	logger.trace("printNewReleases");
 	var print = "<ul>";
 	newReleases.forEach(function(release) {
 		print += "<li>" + release.toHTML() + "</li>";
@@ -152,7 +164,7 @@ function toHTML(newReleases) {
 	return print;
 }
 var sendMails =function(users,callback) {
-	console.log("-sendMails");
+	logger.trace("sendMails");
 	var smtpTransport = nodemailer.createTransport("SMTP", {
 		service : "Gmail",
 		auth : {
@@ -160,24 +172,36 @@ var sendMails =function(users,callback) {
 			pass : ""
 		}
 	});
-	console.log(users);
+	var length = 0;
 	users.forEach(function(user){
-		var mailOptions = {
-			from : "Sender", // sender address
-			to : user.email, // list of receivers
-			subject : "New Releases !", // Subject line
-			html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
-		}
-		console.log(mailOptions);
-		smtpTransport.sendMail(mailOptions, function(error, response) {
-			if (error) {
-				console.log(error);
-			} else {
-				console.log("Message sent: " + response.message);
+		length++;
+		if(user.releases.length>0){
+			var mailOptions = {
+				from : "Sender", // sender address
+				to : user.email, // list of receivers
+				subject : "New Releases !", // Subject line
+				html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
 			}
-		});
-		smtpTransport.close();
-		callback();
+			logger.debug(mailOptions);
+			smtpTransport.sendMail(mailOptions, function(error, response) {
+				if (error) {
+					logger.critic(error);
+				} else {
+					logger.info("Message sent: " + response.message);
+				}
+				if(length==users.length){
+					smtpTransport.close();
+					logger.info("SMTP closed");
+					callback();
+				}
+			});
+		}else{
+			if(length==users.length){
+				smtpTransport.close();
+				logger.info("SMTP closed");
+				callback();
+			}
+		}
 	});
 	
 }

@@ -1,15 +1,18 @@
+var Logger = require("./logger.js");
+var logger = new Logger(["debug","trace","info","critic"]);
 module.exports = function Release(manga, chapter, url) {
 	this.manga = manga;
 	this.chapter = chapter;
 	//this.source = source;
 	this.url = url;
 	this.getId=function(){
+		//logger.trace("getId");
 		var id = manga.replace(/\s/g,"").toLowerCase()+chapter;
+		//logger.debug(id);
 		return id;
 	}
-	//console.log(this.getId());
 	this.toHTML = function() {
-		console.log("-release.print");
+		logger.trace("toHTML");
 		var print = "<a href='"+this.url+"'>"+this.manga+" (" + this.chapter + ")"+"</a>";
 		return print;
 	}
