@@ -1,6 +1,9 @@
 var Chrono = require("./chrono.js");
 var chrono = new Chrono();
-module.exports=function Logger(types){
+var Config = require("./config.js");
+var config = new Config();
+module.exports=function Logger(){
+	var types = config.loggerTypes;
 		//debug > info > critic
 		if(types.indexOf("debug")>-1){
 			this.debug=function(message){

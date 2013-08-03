@@ -1,5 +1,5 @@
 var Logger = require("./logger.js");
-var logger = new Logger(["debug","trace","info","critic"]);
+var logger = new Logger();
 module.exports = function Release(manga, chapter, url) {
 	this.manga = manga;
 	this.chapter = chapter;

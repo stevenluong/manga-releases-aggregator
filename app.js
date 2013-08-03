@@ -7,13 +7,14 @@ var Config = require("./config.js");
 var config = new Config();
 var client = redis.createClient();
 
-var logger = new Logger(["debug","trace","info","critic"]);
+var logger = new Logger();
 var chrono = new Chrono();
 
 var newReleases = new Array();
 var processing = 0;
 
 var main = function (){
+	logger.info("start");
 	var sourceManager = new SourceManager();
 	if(true){
   	sourceManager.getLastReleases(function(releases){

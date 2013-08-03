@@ -4,4 +4,6 @@ module.exports = function Config(){
 	this.appEmail = "";
 	this.appEmailPassword = "";
 	this.senderEmail= "";
+
+	this.loggerTypes = ["debug","trace","info","critic"];
 }

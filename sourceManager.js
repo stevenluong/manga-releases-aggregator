@@ -1,7 +1,7 @@
 var yql = require("yql");
 var Release = require("./release.js");
 var Logger = require("./logger.js");
-var logger = new Logger(["debug","trace","info","critic"]);
+var logger = new Logger();
 var releases = {};
 var sources = new Array();
 
