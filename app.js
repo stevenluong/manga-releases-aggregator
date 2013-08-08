@@ -80,7 +80,7 @@ var getNewReleases = function(releases,callback){
 	releases.forEach(function(release){
 		newReleaseLength++;
 		logger.info("release found: "+release.manga+" - "+release.chapter);	
-		logger.debug(release);	
+		//logger.debug(release);	
 		isNewRelease(release,function(isNew){
 			newReleaseLength--;
 			if(isNew){
@@ -111,11 +111,18 @@ var isNewRelease= function(release,callback){
 	//console.log(manga);
 	//console.log(chapter);
 	client.get(manga,function(err,resp){
+    logger.trace("getLastChapterFromDB");
 		//console.log("err:"+err);
 		//console.log("resp:"+resp);
 		logger.info("Last release in DB : "+manga+" - "+resp);
-		if(resp<chapter){
+		var lastDBChapter = parseInt(resp,10);
+		var foundChapter= parseInt(chapter,10);
+		logger.debug("lastDBChapter : "+lastDBChapter);
+		logger.debug("foundChapter : "+foundChapter);
+		if(lastDBChapter<foundChapter){
+      logger.info("New Release : "+manga+" - "+chapter);
 			client.set(manga,chapter,function(err1,resp1){
+      logger.trace("setNewChapterFromDB");
 				callback(true);
 				//console.log("err1:"+err1);
 				//console.log("resp1:"+resp1);
