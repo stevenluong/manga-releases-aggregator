@@ -24,22 +24,22 @@ var newReleases = new Array();
 var processing = 0;
 
 var main = function (){
-	logger.info("start");
+	logger.debug("start");
 	if(true){
   	sourceManager.getLastReleases(function(releases){
-  		logger.info("nb of distinct releases found on sources : "+Object.keys(releases).length);
+  		logger.debug("nb of distinct releases found on sources : "+Object.keys(releases).length);
   		getNewReleases(releases,function(newReleases){
 				var newReleasesNb = newReleases.length;
-  			logger.info("nb of new releases : "+newReleasesNb);
+  			logger.debug("nb of new releases : "+newReleasesNb);
 				if(newReleasesNb>0){
 					warnUsers(newReleases,function(){
 						logger.info("users warned");
 					});
 				}else{
-					logger.info("no need to warn users");
+					logger.debug("no need to warn users");
 				}
   			client.quit();
-				logger.info("end");
+				logger.debug("end");
   		});
   	});	
 	}
@@ -79,7 +79,7 @@ var getNewReleases = function(releases,callback){
 	var newReleaseLength = 0;
 	releases.forEach(function(release){
 		newReleaseLength++;
-		logger.info("release found: "+release.manga+" - "+release.chapter);	
+		logger.debug("release found: "+release.manga+" - "+release.chapter);	
 		//logger.debug(release);	
 		isNewRelease(release,function(isNew){
 			newReleaseLength--;
@@ -112,9 +112,7 @@ var isNewRelease= function(release,callback){
 	//console.log(chapter);
 	client.get(manga,function(err,resp){
     logger.trace("getLastChapterFromDB");
-		//console.log("err:"+err);
-		//console.log("resp:"+resp);
-		logger.info("Last release in DB : "+manga+" - "+resp);
+		logger.debug("Last release in DB : "+manga+" - "+resp);
 		var lastDBChapter = parseInt(resp,10);
 		var foundChapter= parseInt(chapter,10);
 		logger.debug("lastDBChapter : "+lastDBChapter);
@@ -167,18 +165,18 @@ var sendMails =function(users,callback) {
 				if (error) {
 					logger.critic(error);
 				} else {
-					logger.info("Message sent: " + response.message);
+					logger.debug("Message sent: " + response.message);
 				}
 				if(length==users.length){
 					smtpTransport.close();
-					logger.info("SMTP closed");
+					logger.debug("SMTP closed");
 					callback();
 				}
 			});
 		}else{
 			if(length==users.length){
 				smtpTransport.close();
-				logger.info("SMTP closed");
+				logger.debug("SMTP closed");
 				callback();
 			}
 		}

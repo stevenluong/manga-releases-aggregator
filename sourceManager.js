@@ -64,7 +64,7 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 				logger.debug("results:"+results);
 				return false;
 			}
-			logger.info("results found on "+root+" : "+results.a.length);
+			logger.debug("results found on "+root+" : "+results.a.length);
 			var length = 0;
 			results.a.forEach(function(a){
 				length++;
@@ -124,7 +124,7 @@ var TmpSource = function(){
 			//console.log(response);	
 			//console.log(response.query.results.results);	
 			var results = response.query.results.results;	
-			logger.info("mangafox"+" results nb : "+results.a.length);	
+			logger.debug("mangafox"+" results nb : "+results.a.length);	
 			var length = 0
 			results.a.forEach(function(a){
 				length++;
