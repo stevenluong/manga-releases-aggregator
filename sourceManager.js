@@ -55,7 +55,6 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 		new yql.exec('select * from data.html.cssselect where url="' + this.indexUrl + '" and css="'+this.css+'"', function(response) {
 			if(response==null||response.query==null||response.query.results==null){
 				logger.critic("http request error on : "+root);
-				client.close();
 				return false;
 			}
 			var results = response.query.results.results;
