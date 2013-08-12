@@ -54,12 +54,12 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 		logger.trace("getLastReleases");
 		new yql.exec('select * from data.html.cssselect where url="' + this.indexUrl + '" and css="'+this.css+'"', function(response) {
 			if(response==null||response.query==null||response.query.results==null){
-				logger.critic("http request error on : "+root);
+				logger.debug("http request error on : "+root);
 				return false;
 			}
 			var results = response.query.results.results;
 			if(results==null){
-				logger.critic(root+" has no results");
+				logger.debug(root+" has no results");
 				logger.debug("css:"+css);
 				logger.debug("results:"+results);
 				return false;

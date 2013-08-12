@@ -36,7 +36,7 @@ var main = function (){
 						logger.info("users warned");
 					});
 				}else{
-					logger.debug("no need to warn users");
+					logger.debug("no new releases");
 				}
   			client.quit();
 				logger.debug("end");
@@ -52,6 +52,7 @@ if(require.main===module){
 }
 var warnUsers = function(releases,callback){
 	logger.trace("warnUsers");
+	//TODO Verify this condition ?
 	if(releases.length>0){
 		userManager.getUsers(function(users){
 				users.forEach(function(user){
