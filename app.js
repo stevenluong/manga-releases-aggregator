@@ -160,7 +160,7 @@ var sendMails =function(users,callback) {
 				subject : "New Releases !", // Subject line
 				html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
 			}
-			logger.critic(mailOptions);
+			logger.debug(mailOptions);
 			smtpTransport.sendMail(mailOptions, function(error, response) {
 				if (error) {
 					logger.critic(error);
