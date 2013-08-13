@@ -22,7 +22,8 @@ module.exports=function Logger(){
 		}
 		if(types.indexOf("critic")>-1){
 			this.critic=function(message){
-				log(logDate("CRITIC: "+message));
+				log(logDate("CRITIC: "));
+				console.log(message);
 			}
 		}else{
 			this.critic=function(){}

@@ -125,7 +125,7 @@ var isNewRelease= function(release,callback){
 				callback(true);
 				//console.log("err1:"+err1);
 				//console.log("resp1:"+resp1);
-				logger.info("new release : "+manga+" - "+chapter + " (DB updated)");
+				logger.info("DB updated : "+manga+" - "+chapter);
 			});
 		}
 		else{
@@ -144,40 +144,46 @@ function toHTML(newReleases) {
 }
 var sendMails =function(users,callback) {
 	logger.trace("sendMails");
-	var smtpTransport = nodemailer.createTransport("SMTP", {
-		service : "Gmail",
-		auth : {
-			user : config.appEmail,
-			pass : config.appEmailPassword
-		}
-	});
 	var length = 0;
 	users.forEach(function(user){
-		length++;
 		if(user.releases.length>0){
+      var smtpTransport = nodemailer.createTransport("SMTP", {
+		    service : "Gmail",
+		    auth : {
+			    user : config.appEmail,
+			    pass : config.appEmailPassword
+		    }
+	    });
 			var mailOptions = {
 				from : config.senderEmail, // sender address
 				to : user.email, // list of receivers
 				subject : "New Releases !", // Subject line
 				html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
 			}
-			logger.debug(mailOptions);
+			logger.critic(mailOptions);
 			smtpTransport.sendMail(mailOptions, function(error, response) {
 				if (error) {
 					logger.critic(error);
 				} else {
+				  logger.info(user.email+" warned");
 					logger.debug("Message sent: " + response.message);
 				}
+				length++;
+				//logger.info("users length: "+length);
+				//logger.debug(length);
+				//logger.debug(users.length);
 				if(length==users.length){
-					smtpTransport.close();
+								smtpTransport.close();
 					logger.debug("SMTP closed");
 					callback();
 				}
 			});
 		}else{
+      length++;
+      //logger.info("users length: "+length);
+      //logger.debug(length);
+      //logger.debug(users.length);
 			if(length==users.length){
-				smtpTransport.close();
-				logger.debug("SMTP closed");
 				callback();
 			}
 		}
