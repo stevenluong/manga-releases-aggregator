@@ -8,9 +8,9 @@ exports.getUsers = function(callback){
 		Logger.trace("DAL.getUsers");
 		var auth_token = "dM99a8T3XGzDHEbo7mhQ";
 		var options = {
-			hostname: config.rorHost,
+			hostname: Config.rorHost,
 			port: 443,
-			path: config.rorRootPath+'/users.json?auth_token='+auth_token,
+			path: Config.rorRootPath+'/users.json?auth_token='+auth_token,
 			method: 'GET',
 			headers: {
 						'Content-Type': 'application/json',
