@@ -34,12 +34,14 @@ var main = function (){
 				if(newReleasesNb>0){
 					warnUsers(newReleases,function(){
 						logger.info("users warned");
+						client.quit();
+						logger.debug("end");
 					});
 				}else{
 					logger.debug("no new releases");
+					client.quit();
+					logger.debug("end");
 				}
-  			client.quit();
-				logger.debug("end");
   		});
   	});	
 	}
@@ -56,6 +58,7 @@ var warnUsers = function(releases,callback){
 	if(releases.length>0){
 		userManager.getUsers(function(users){
 				users.forEach(function(user){
+					logger.debug(user);
 					releases.forEach(function(release){
 						var manga = release.manga;
 						if(user.mangas.indexOf(manga)>-1){
@@ -78,11 +81,13 @@ var getNewReleases = function(releases,callback){
 	releases = filterReleases(releases);
 	var newReleases = new Array();
 	var newReleaseLength = 0;
+	var mangas = new Array();
 	releases.forEach(function(release){
 		newReleaseLength++;
 		logger.debug("release found: "+release.manga+" - "+release.chapter);	
 		//logger.debug(release);	
-		isNewRelease(release,function(isNew){
+		isNewRelease(release,mangas,function(isNew){
+			logger.debug(newReleaseLength);	
 			newReleaseLength--;
 			if(isNew){
 				newReleases.push(release);
@@ -92,7 +97,6 @@ var getNewReleases = function(releases,callback){
 			}
 		});
 	});
-	return newReleases;
 }
 //TODO Delete this filter
 var filterReleases = function(releases){
@@ -105,32 +109,42 @@ var filterReleases = function(releases){
 	});
 	return filteredReleases;
 }
-var isNewRelease= function(release,callback){
+var isNewRelease= function(release,mangas,callback){
 	logger.trace("isNewRelease");
 	var manga = release.manga;
 	var chapter = release.chapter;
 	//console.log(manga);
 	//console.log(chapter);
-	client.get(manga,function(err,resp){
-    logger.trace("getLastChapterFromDB");
-		logger.debug("Last release in DB : "+manga+" - "+resp);
-		var lastDBChapter = parseInt(resp,10);
+	getLastChapter(manga,function(lastChapter){
 		var foundChapter= parseInt(chapter,10);
-		logger.debug("lastDBChapter : "+lastDBChapter);
+		logger.debug("lastChapter : "+lastChapter);
 		logger.debug("foundChapter : "+foundChapter);
-		if(lastDBChapter<foundChapter){
+		if(lastChapter<foundChapter){
       logger.info("New Release : "+manga+" - "+chapter);
-			client.set(manga,chapter,function(err1,resp1){
-      logger.trace("setNewChapterFromDB");
+			setNewChapter(manga,chapter,function(){
 				callback(true);
-				//console.log("err1:"+err1);
-				//console.log("resp1:"+resp1);
-				logger.info("DB updated : "+manga+" - "+chapter);
 			});
 		}
 		else{
 			callback(false);
 		}
+	});
+}
+var getLastChapter = function(manga,callback){
+    logger.trace("getLastChapter");
+    logger.debug(manga);
+		client.get(manga,function(err,resp){
+			logger.debug("Last release in DB : "+manga+" - "+resp);
+			callback(parseInt(resp,10));
+		});
+}
+var setNewChapter = function(manga,chapter,callback){
+  logger.trace("setNewChapter");
+	client.set(manga,chapter,function(err1,resp1){
+		logger.info("DB updated : "+manga+" - "+chapter);
+		callback();
+		//console.log("err1:"+err1);
+		//console.log("resp1:"+resp1);
 	});
 }
 function toHTML(newReleases) {
