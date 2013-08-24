@@ -10,10 +10,8 @@ var Chrono = require("./chrono.js");
 var chrono = new Chrono();
 
 var Logger = require("./logger.js");
-var logger = new Logger();
 
 var Config = require("./config.js");
-var config = new Config();
 
 var UserManager = require("./userManager.js");
 var userManager = new UserManager();
@@ -24,23 +22,23 @@ var newReleases = new Array();
 var processing = 0;
 
 var main = function (){
-	logger.debug("start");
+	Logger.debug("start");
 	if(true){
   	sourceManager.getLastReleases(function(releases){
-  		logger.debug("nb of distinct releases found on sources : "+Object.keys(releases).length);
+  		Logger.debug("nb of distinct releases found on sources : "+Object.keys(releases).length);
   		getNewReleases(releases,function(newReleases){
 				var newReleasesNb = newReleases.length;
-  			logger.debug("nb of new releases : "+newReleasesNb);
+  			Logger.debug("nb of new releases : "+newReleasesNb);
 				if(newReleasesNb>0){
 					warnUsers(newReleases,function(){
-						logger.info("users warned");
+						Logger.info("users warned");
 						client.quit();
-						logger.debug("end");
+						Logger.debug("end");
 					});
 				}else{
-					logger.debug("no new releases");
+					Logger.debug("no new releases");
 					client.quit();
-					logger.debug("end");
+					Logger.debug("end");
 				}
   		});
   	});	
@@ -53,12 +51,12 @@ if(require.main===module){
 	main();
 }
 var warnUsers = function(releases,callback){
-	logger.trace("warnUsers");
+	Logger.trace("warnUsers");
 	//TODO Verify this condition ?
 	if(releases.length>0){
 		userManager.getUsers(function(users){
 				users.forEach(function(user){
-					logger.debug(user);
+					Logger.debug(user);
 					releases.forEach(function(release){
 						var manga = release.manga;
 						if(user.mangas.indexOf(manga)>-1){
@@ -77,17 +75,17 @@ var warnUsers = function(releases,callback){
 };
 
 var getNewReleases = function(releases,callback){
-	logger.trace("getNewReleases");
+	Logger.trace("getNewReleases");
 	releases = filterReleases(releases);
 	var newReleases = new Array();
 	var newReleaseLength = 0;
 	var mangas = new Array();
 	releases.forEach(function(release){
 		newReleaseLength++;
-		logger.debug("release found: "+release.manga+" - "+release.chapter);	
-		//logger.debug(release);	
+		Logger.debug("release found: "+release.manga+" - "+release.chapter);	
+		//Logger.debug(release);	
 		isNewRelease(release,mangas,function(isNew){
-			logger.debug(newReleaseLength);	
+			Logger.debug(newReleaseLength);	
 			newReleaseLength--;
 			if(isNew){
 				newReleases.push(release);
@@ -103,24 +101,24 @@ var filterReleases = function(releases){
 	var filteredReleases = new Array();
 	Object.keys(releases).forEach(function(key){
 		var release = releases[key];
-		if(config.selectedMangas.indexOf(release.manga)>-1){
+		if(Config.selectedMangas.indexOf(release.manga)>-1){
 			filteredReleases.push(release);
 		};
 	});
 	return filteredReleases;
 }
 var isNewRelease= function(release,mangas,callback){
-	logger.trace("isNewRelease");
+	Logger.trace("isNewRelease");
 	var manga = release.manga;
 	var chapter = release.chapter;
 	//console.log(manga);
 	//console.log(chapter);
 	getLastChapter(manga,function(lastChapter){
 		var foundChapter= parseInt(chapter,10);
-		logger.debug("lastChapter : "+lastChapter);
-		logger.debug("foundChapter : "+foundChapter);
+		Logger.debug("lastChapter : "+lastChapter);
+		Logger.debug("foundChapter : "+foundChapter);
 		if(lastChapter<foundChapter){
-      logger.info("New Release : "+manga+" - "+chapter);
+      Logger.info("New Release : "+manga+" - "+chapter);
 			setNewChapter(manga,chapter,function(){
 				callback(true);
 			});
@@ -131,24 +129,24 @@ var isNewRelease= function(release,mangas,callback){
 	});
 }
 var getLastChapter = function(manga,callback){
-    logger.trace("getLastChapter");
-    logger.debug(manga);
+    Logger.trace("getLastChapter");
+    Logger.debug(manga);
 		client.get(manga,function(err,resp){
-			logger.debug("Last release in DB : "+manga+" - "+resp);
+			Logger.debug("Last release in DB : "+manga+" - "+resp);
 			callback(parseInt(resp,10));
 		});
 }
 var setNewChapter = function(manga,chapter,callback){
-  logger.trace("setNewChapter");
+  Logger.trace("setNewChapter");
 	client.set(manga,chapter,function(err1,resp1){
-		logger.info("DB updated : "+manga+" - "+chapter);
+		Logger.info("DB updated : "+manga+" - "+chapter);
 		callback();
 		//console.log("err1:"+err1);
 		//console.log("resp1:"+resp1);
 	});
 }
 function toHTML(newReleases) {
-	logger.trace("printNewReleases");
+	Logger.trace("printNewReleases");
 	var print = "<ul>";
 	newReleases.forEach(function(release) {
 		print += "<li>" + release.toHTML() + "</li>";
@@ -157,46 +155,46 @@ function toHTML(newReleases) {
 	return print;
 }
 var sendMails =function(users,callback) {
-	logger.trace("sendMails");
+	Logger.trace("sendMails");
 	var length = 0;
 	users.forEach(function(user){
 		if(user.releases.length>0){
       var smtpTransport = nodemailer.createTransport("SMTP", {
 		    service : "Gmail",
 		    auth : {
-			    user : config.appEmail,
-			    pass : config.appEmailPassword
+			    user : Config.appEmail,
+			    pass : Config.appEmailPassword
 		    }
 	    });
 			var mailOptions = {
-				from : config.senderEmail, // sender address
+				from : Config.senderEmail, // sender address
 				to : user.email, // list of receivers
 				subject : "New Releases !", // Subject line
 				html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
 			}
-			logger.debug(mailOptions);
+			Logger.debug(mailOptions);
 			smtpTransport.sendMail(mailOptions, function(error, response) {
 				if (error) {
-					logger.critic(error);
+					Logger.critic(error);
 				} else {
-				  logger.info(user.email+" warned");
-					logger.debug("Message sent: " + response.message);
+				  Logger.info(user.email+" warned");
+					Logger.debug("Message sent: " + response.message);
 				}
 				length++;
-				//logger.info("users length: "+length);
-				//logger.debug(length);
-				//logger.debug(users.length);
+				//Logger.info("users length: "+length);
+				//Logger.debug(length);
+				//Logger.debug(users.length);
 				if(length==users.length){
 								smtpTransport.close();
-					logger.debug("SMTP closed");
+					Logger.debug("SMTP closed");
 					callback();
 				}
 			});
 		}else{
       length++;
-      //logger.info("users length: "+length);
-      //logger.debug(length);
-      //logger.debug(users.length);
+      //Logger.info("users length: "+length);
+      //Logger.debug(length);
+      //Logger.debug(users.length);
 			if(length==users.length){
 				callback();
 			}

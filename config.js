@@ -1,12 +1,10 @@
-module.exports = function Config(){
-	this.user1Email = "";
-	this.user2Email = "";
-	this.appEmail = "";
-	this.appEmailPassword = "";
-	this.senderEmail= "";
+exports.appEmail = "";
+exports.appEmailPassword = "";
+exports.senderEmail= "";
+//exports.rorHost=""
+exports.rorHost=""
+exports.rorRootPath=""
 
+exports.loggerTypes = ["debug","trace","info","critic"];
 
-	this.loggerTypes = ["debug","trace","info","critic"];
-
-	this.selectedMangas = ["Noblesse","Naruto","Tower of God","The Breaker: New Waves","Baby Steps","Bleach","Girls of the Wild's"];
-}
+exports.selectedMangas = ["Noblesse","Naruto","Tower of God","The Breaker: New Waves","Baby Steps","Bleach","Girls of the Wild's"];

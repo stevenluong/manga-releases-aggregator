@@ -1,7 +1,6 @@
 var yql = require("yql");
 var Release = require("./release.js");
 var Logger = require("./logger.js");
-var logger = new Logger();
 var releases = {};
 var sources = new Array();
 
@@ -29,7 +28,7 @@ module.exports = function SourceManager() {
 		if(false){//DEBUG
 			var tmpSource = new TmpSource();
 			tmpSource.getLastReleases(function(){
-				logger.debug("done");
+				Logger.debug("done");
 			});
 		}else{
 			var length = 0;
@@ -51,24 +50,24 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 	this.indexUrl = this.root + relativeUrl;
 	this.css = css;
 	this.getLastReleases = function(callback){
-		logger.trace("getLastReleases");
+		Logger.trace("getLastReleases");
 		new yql.exec('select * from data.html.cssselect where url="' + this.indexUrl + '" and css="'+this.css+'"', function(response) {
 			if(response==null||response.query==null||response.query.results==null){
-				logger.debug("http request error on : "+root);
+				Logger.debug("http request error on : "+root);
 				return false;
 			}
 			var results = response.query.results.results;
 			if(results==null){
-				logger.debug(root+" has no results");
-				logger.debug("css:"+css);
-				logger.debug("results:"+results);
+				Logger.debug(root+" has no results");
+				Logger.debug("css:"+css);
+				Logger.debug("results:"+results);
 				return false;
 			}
-			logger.debug("results found on "+root+" : "+results.a.length);
+			Logger.debug("results found on "+root+" : "+results.a.length);
 			var length = 0;
 			results.a.forEach(function(a){
 				length++;
-				//logger.debug(a);
+				//Logger.debug(a);
 				var chapter = getChapter(a.content);
 				var manga = getManga(a.content);
 				//console.log("root:"+root);
@@ -80,8 +79,8 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 				var release = new Release(manga,chapter,url)
 				//if(!intRegex.test(chapter)){
 				if(release.chapter=="Manga"||release.chapter=="Manhwa"){
-					//logger.debug("SPECIAL:"+chapter);
-					//logger.debug(release);
+					//Logger.debug("SPECIAL:"+chapter);
+					//Logger.debug(release);
 				}else{
 					releases[release.getId()]=release;
 				}
@@ -93,7 +92,7 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 			});
 		});
 	}
-	logger.debug(this);
+	Logger.debug(this);
 }
 var getManga = function(description){
 	var split = description.split(' ');
@@ -124,7 +123,7 @@ var TmpSource = function(){
 			//console.log(response);	
 			//console.log(response.query.results.results);	
 			var results = response.query.results.results;	
-			logger.debug("mangafox"+" results nb : "+results.a.length);	
+			Logger.debug("mangafox"+" results nb : "+results.a.length);	
 			var length = 0
 			results.a.forEach(function(a){
 				length++;
