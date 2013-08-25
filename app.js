@@ -1,8 +1,5 @@
 var nodemailer = require("nodemailer");
 
-var redis = require("redis");
-var client = redis.createClient();
-
 var SourceManager = require("./sourceManager.js");
 var sourceManager = new SourceManager();
 
@@ -16,29 +13,29 @@ var Config = require("./config.js");
 var UserManager = require("./userManager.js");
 var userManager = new UserManager();
 
+var DAL = require("./dal.js");
 
-
-var newReleases = new Array();
-var processing = 0;
+var Manga = require("./manga.js");
 
 var main = function (){
-	Logger.debug("start");
+	Logger.trace("main");
 	if(true){
   	sourceManager.getLastReleases(function(releases){
-  		Logger.debug("nb of distinct releases found on sources : "+Object.keys(releases).length);
+  		Logger.debug("nb of distinct releases found on sources",Object.keys(releases).length);
   		getNewReleases(releases,function(newReleases){
+				Logger.debug("new releases",newReleases);
 				var newReleasesNb = newReleases.length;
-  			Logger.debug("nb of new releases : "+newReleasesNb);
+  			Logger.debug("nb of new releases",newReleasesNb);
 				if(newReleasesNb>0){
-					warnUsers(newReleases,function(){
-						Logger.info("users warned");
-						client.quit();
-						Logger.debug("end");
+					warnUsers(newReleases,function(areWarnedUsers){
+						if(areWarnedUsers){
+							Logger.info("users warned");
+						}else{
+							Logger.info("no warned users");
+						}
 					});
 				}else{
-					Logger.debug("no new releases");
-					client.quit();
-					Logger.debug("end");
+					Logger.info("no new releases");
 				}
   		});
   	});	
@@ -52,21 +49,26 @@ if(require.main===module){
 }
 var warnUsers = function(releases,callback){
 	Logger.trace("warnUsers");
-	//TODO Verify this condition ?
+	var areWarnedUsers = false;
 	if(releases.length>0){
 		userManager.getUsers(function(users){
 				users.forEach(function(user){
-					Logger.debug(user);
+					Logger.debug("user",user);
 					releases.forEach(function(release){
 						var manga = release.manga;
 						if(user.mangas.indexOf(manga)>-1){
+							areWarnedUsers = true;
 							user.releases.push(release);
 						}
 					});
 				});
-				sendMails(users,function(){
-					callback();
-				});
+				if(areWarnedUsers){
+					sendMails(users,function(){
+						callback(true);
+					});
+				}else{
+					callback(false);
+				}
 		});
 	}
 	else{
@@ -76,73 +78,89 @@ var warnUsers = function(releases,callback){
 
 var getNewReleases = function(releases,callback){
 	Logger.trace("getNewReleases");
-	releases = filterReleases(releases);
+	//releases = filterReleases(releases);
 	var newReleases = new Array();
-	var newReleaseLength = 0;
-	var mangas = new Array();
-	releases.forEach(function(release){
-		newReleaseLength++;
-		Logger.debug("release found: "+release.manga+" - "+release.chapter);	
-		//Logger.debug(release);	
-		isNewRelease(release,mangas,function(isNew){
-			Logger.debug(newReleaseLength);	
-			newReleaseLength--;
-			if(isNew){
-				newReleases.push(release);
-			}
-			if(newReleaseLength==0){
-				callback(newReleases);
-			}
+	DAL.getMangas(function(mangas){
+		releases.forEach(function(release){
+			//Logger.info("release found: "+release.manga+" - "+release.chapter);	
+			Logger.debug(release);	
+			isNewRelease(release,mangas,function(isNew){
+				if(isNew){
+					Logger.debug("new release",release);
+					newReleases.push(release);
+				}
+			});
 		});
+		callback(newReleases);
 	});
 }
-//TODO Delete this filter
-var filterReleases = function(releases){
-	var filteredReleases = new Array();
-	Object.keys(releases).forEach(function(key){
-		var release = releases[key];
-		if(Config.selectedMangas.indexOf(release.manga)>-1){
-			filteredReleases.push(release);
-		};
-	});
-	return filteredReleases;
-}
+//var filterReleases = function(releases){
+//	var filteredReleases = new Array();
+//	//Logger.debug("releases",releases);
+//	Object.keys(releases).forEach(function(key){
+//		var release = releases[key];
+//		if(Config.selectedMangas.indexOf(release.manga)>-1){
+//			filteredReleases.push(release);
+//		};
+//	});
+//	return filteredReleases;
+//}
 var isNewRelease= function(release,mangas,callback){
 	Logger.trace("isNewRelease");
-	var manga = release.manga;
-	var chapter = release.chapter;
-	//console.log(manga);
-	//console.log(chapter);
-	getLastChapter(manga,function(lastChapter){
-		var foundChapter= parseInt(chapter,10);
-		Logger.debug("lastChapter : "+lastChapter);
-		Logger.debug("foundChapter : "+foundChapter);
-		if(lastChapter<foundChapter){
-      Logger.info("New Release : "+manga+" - "+chapter);
-			setNewChapter(manga,chapter,function(){
-				callback(true);
-			});
-		}
-		else{
-			callback(false);
-		}
-	});
-}
-var getLastChapter = function(manga,callback){
-    Logger.trace("getLastChapter");
-    Logger.debug(manga);
-		client.get(manga,function(err,resp){
-			Logger.debug("Last release in DB : "+manga+" - "+resp);
-			callback(parseInt(resp,10));
+	var mangaName = release.manga;
+	Logger.debug("mangaName",mangaName);
+	var chapterNb = release.chapter;
+	if(isNewManga(mangas,mangaName)){
+		Logger.info("new manga : "+mangaName);
+		//TODO set new manga & set new chapter
+		DAL.addNewManga(release,function(){
+			Logger.info("new manga added");
 		});
+		callback(true);
+	}else
+	{
+		getLastChapterNb(mangaName,mangas,function(lastChapter){
+			var foundChapter= parseInt(chapterNb,10);
+			Logger.debug("lastChapter",lastChapter);
+			Logger.debug("foundChapter",foundChapter);
+			if(lastChapter<foundChapter){
+				callback(true);
+				Logger.info("New Release : "+mangaName+" - "+chapterNb);
+				Logger.debug("manga",mangas[mangaName]);
+				var mangaId = mangas[mangaName].id;
+				Logger.debug("mangaId",mangaId);
+				addNewChapter(release,mangaId,function(){
+					Logger.info("new chapter added");
+				});
+			}
+			else{
+				callback(false);
+				Logger.debug("callback","!isNewChapter");
+			}
+		});
+	}
 }
-var setNewChapter = function(manga,chapter,callback){
-  Logger.trace("setNewChapter");
-	client.set(manga,chapter,function(err1,resp1){
-		Logger.info("DB updated : "+manga+" - "+chapter);
+var isNewManga = function(mangas,mangaName){
+	Logger.trace("isNewManga");
+	if(Object.keys(mangas).indexOf(mangaName)>-1){
+		return false;
+	}else{
+		Logger.dev('new manga',mangaName);
+		mangas[mangaName] = new Manga(mangaName,0,0);
+		return true;
+	}
+}
+var getLastChapterNb = function(mangaName,mangas,callback){
+    Logger.trace("getLastChapter");
+    Logger.debug("mangaName",mangaName);
+		var lastChapterNb = mangas[mangaName].lastChapterNb;
+		Logger.debug("lastChapterNb",lastChapterNb);
+		callback(lastChapterNb);
+}
+var addNewChapter = function(release,mangaId,callback){
+  Logger.trace("addNewChapter");
+	DAL.addNewChapter(release,mangaId,function(){
 		callback();
-		//console.log("err1:"+err1);
-		//console.log("resp1:"+resp1);
 	});
 }
 function toHTML(newReleases) {
@@ -157,6 +175,7 @@ function toHTML(newReleases) {
 var sendMails =function(users,callback) {
 	Logger.trace("sendMails");
 	var length = 0;
+	Logger.debug("users",users);
 	users.forEach(function(user){
 		if(user.releases.length>0){
       var smtpTransport = nodemailer.createTransport("SMTP", {
@@ -172,13 +191,13 @@ var sendMails =function(users,callback) {
 				subject : "New Releases !", // Subject line
 				html : "<h1>New Releases</h1><b>" + toHTML(user.releases) + "</b>" // html body
 			}
-			Logger.debug(mailOptions);
+			Logger.debug("mailOptions",mailOptions);
 			smtpTransport.sendMail(mailOptions, function(error, response) {
 				if (error) {
 					Logger.critic(error);
 				} else {
 				  Logger.info(user.email+" warned");
-					Logger.debug("Message sent: " + response.message);
+					Logger.debug("Message sent",response.message);
 				}
 				length++;
 				//Logger.info("users length: "+length);

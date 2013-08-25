@@ -3,10 +3,10 @@ var chrono = new Chrono();
 var Config = require("./config.js");
 var types = Config.loggerTypes;
 
-exports.debug = function(message){
+exports.debug = function(message,obj){
 	if(types.indexOf("debug")>-1){
-		log(logDate("DEBUG: "));
-		console.log(message);
+		log(logDate("DEBUG: "+message));
+		console.log(obj);
 	}
 }
 exports.info = function(message){
@@ -24,6 +24,12 @@ exports.critic = function(message){
 exports.trace = function(functionName){
 	if(types.indexOf("trace")>-1){
 		log(logDate("TRACE: "+functionName+"()"));
+	}
+}
+exports.dev = function(message,obj){
+	if(types.indexOf("dev")>-1){
+		log(logDate("DEV: "+message));
+		console.log(obj);
 	}
 }
 function logDate(message){

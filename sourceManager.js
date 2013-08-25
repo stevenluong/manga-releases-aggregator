@@ -1,7 +1,7 @@
 var yql = require("yql");
 var Release = require("./release.js");
 var Logger = require("./logger.js");
-var releases = {};
+var sortedReleases = {};
 var sources = new Array();
 
 module.exports = function SourceManager() {
@@ -19,6 +19,11 @@ module.exports = function SourceManager() {
 			source.getLastReleases(function(){
 				length++;	
 				if(length==sources.length){
+					var releases = new Array();
+					Object.keys(sortedReleases).forEach(function(key){
+						var release = sortedReleases[key];
+						releases.push(release);
+					});
 					callback(releases);
 				}
 			});
@@ -28,7 +33,7 @@ module.exports = function SourceManager() {
 		if(false){//DEBUG
 			var tmpSource = new TmpSource();
 			tmpSource.getLastReleases(function(){
-				Logger.debug("done");
+				Logger.debug("state","done");
 			});
 		}else{
 			var length = 0;
@@ -53,17 +58,17 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 		Logger.trace("getLastReleases");
 		new yql.exec('select * from data.html.cssselect where url="' + this.indexUrl + '" and css="'+this.css+'"', function(response) {
 			if(response==null||response.query==null||response.query.results==null){
-				Logger.debug("http request error on : "+root);
+				Logger.debug("http request error",root);
 				return false;
 			}
 			var results = response.query.results.results;
 			if(results==null){
-				Logger.debug(root+" has no results");
-				Logger.debug("css:"+css);
-				Logger.debug("results:"+results);
+				Logger.debug("no result",root);
+				Logger.debug("css",css);
+				Logger.debug("results",results);
 				return false;
 			}
-			Logger.debug("results found on "+root+" : "+results.a.length);
+			Logger.debug("results found on "+root,results.a.length);
 			var length = 0;
 			results.a.forEach(function(a){
 				length++;
@@ -82,7 +87,7 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 					//Logger.debug("SPECIAL:"+chapter);
 					//Logger.debug(release);
 				}else{
-					releases[release.getId()]=release;
+					sortedReleases[release.getId()]=release;
 				}
 				//console.log(release);
 				if(results.a.length==length){
@@ -92,7 +97,7 @@ var Source = function(root, relativeUrl,css,isRelativePath){
 			});
 		});
 	}
-	Logger.debug(this);
+	Logger.debug("new source",this);
 }
 var getManga = function(description){
 	var split = description.split(' ');
@@ -132,7 +137,7 @@ var TmpSource = function(){
 				var chapter = getChapter(a.content);
 				var url = a.href;
 				var release = new Release(manga,chapter,url);
-				releases[release.getId()]=release;
+				sortedReleases[release.getId()]=release;
 				//console.log(release);
 				//console.log(length);
 				//console.log(results.a.length);
