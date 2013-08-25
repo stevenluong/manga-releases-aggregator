@@ -63,6 +63,7 @@ var postData = function(url,data,callback){
 	Logger.trace("postData");
 	var options = {
 		hostname: Config.rorHost,
+		rejectUnauthorized:false,
 		port: Config.rorPort,
 		path: Config.rorRootPath+url+'?auth_token='+Config.rorAuthToken,
 		method: 'POST',
@@ -74,7 +75,7 @@ var postData = function(url,data,callback){
 	
 	Logger.debug("postData",data);
 	//https for prod
-	var req = http.request(options, function(res) { 
+	var req = https.request(options, function(res) { 
 		Logger.debug("statusCode",res.statusCode);
 		Logger.debug("headers",res.headers);
 		var data = '';
@@ -95,6 +96,7 @@ var postData = function(url,data,callback){
 var getData=function(url,callback){
 	var options = {
 		hostname: Config.rorHost,
+		rejectUnauthorized:false,
 		port: Config.rorPort,
 		path: Config.rorRootPath+url+'?auth_token='+Config.rorAuthToken,
 		method: 'GET',
@@ -104,7 +106,7 @@ var getData=function(url,callback){
 	};
 	Logger.debug("getOptions",options);
 	//https for prod
-	var req = http.request(options, function(res) { 
+	var req = https.request(options, function(res) { 
 		Logger.debug("statusCode",res.statusCode);
 		Logger.debug("headers",res.headers);
 		var data = '';

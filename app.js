@@ -25,7 +25,7 @@ var main = function (){
 					}
 				});
 			}else{
-				Logger.info("no new releases");
+				//Logger.info("no new releases");
 			}
 		});
 	});	
