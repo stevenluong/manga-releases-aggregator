@@ -1,6 +1,6 @@
 var Logger = require("./logger.js");
 
-var DAL = require('./DAL.js');
+var DAL = require('./dal.js');
 var MailManager = require('./mailManager.js');
 
 exports.warnUsers = function(releases,callback){
