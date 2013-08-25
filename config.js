@@ -8,4 +8,4 @@ exports.rorAuthToken="";
 
 exports.loggerTypes = ["trace","info","critic","dev"];
 
-//exports.selectedMangas = ["Noblesse","Naruto","Tower of God","The Breaker: New Waves","Baby Steps","Bleach","Girls of the Wild's"];
+exports.selectedMangas = ["Noblesse","Naruto","Tower of God","The Breaker: New Waves","Baby Steps","Bleach","Girls of the Wild's"];
