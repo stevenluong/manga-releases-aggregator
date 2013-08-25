@@ -1,4 +1,5 @@
 var Release = require("./release.js");
+var ReleaseManager = require("./releaseManager.js");
 var yql = require("yql");
 var Logger = require("./logger.js");
 module.exports = function Source(root, relativeUrl,css,isRelativePath){
@@ -27,19 +28,14 @@ module.exports = function Source(root, relativeUrl,css,isRelativePath){
 				//Logger.debug(a);
 				var chapter = getChapter(a.content);
 				var manga = getManga(a.content);
-				//console.log("root:"+root);
-				//console.log("a.href:"+a.href);
-				//console.log(isRelativePath);
-				//console.log(isRelativePath==true);
 				var url = isRelativePath==true?root+a.href:a.href;
-				//var intRegex = /^\d+$/;
 				var release = new Release(manga,chapter,url)
-				//if(!intRegex.test(chapter)){
-				if(release.chapter=="Manga"||release.chapter=="Manhwa"){
-					//Logger.debug("SPECIAL:"+chapter);
-					//Logger.debug(release);
-				}else{
-					sortedReleases[release.getId()]=release;
+				//filter/delete/clean release
+				if(ReleaseManager.isCleanRelease(release)){
+					sortedReleases[release.id]=release;
+				}
+				else{
+					//Logger.debug("not clean release",release);
 				}
 				//console.log(release);
 				if(results.a.length==length){

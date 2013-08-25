@@ -2,7 +2,13 @@ var Logger = require("./logger.js");
 var Config = require("./config.js");
 var DAL = require("./dal.js");
 var Manga = require("./manga.js");
-
+exports.isCleanRelease=function(release){
+	if(isNaN(parseInt(release.chapter,10))||release.manga==""){
+		return false;
+	}else{
+		return true;
+	}
+}
 exports.getNewReleases = function(releases,callback){
 	Logger.trace("getNewReleases");
 	releases = filterReleases(releases);
@@ -25,7 +31,8 @@ var filterReleases = function(releases){
 	var filteredReleases = new Array();
 	//Logger.debug("releases",releases);
 	releases.forEach(function(release){
-		if(Config.selectedMangas.indexOf(release.manga)>-1){
+		if(Config.selectedMangas.indexOf(release.mangaId)>-1){
+			Logger.dev("selected filtered release",release);
 			filteredReleases.push(release);
 		};
 	});
@@ -33,7 +40,7 @@ var filterReleases = function(releases){
 }
 
 var isNewRelease= function(release,mangas,callback){
-	Logger.trace("isNewRelease");
+	//Logger.trace("isNewRelease");
 	var mangaName = release.manga;
 	Logger.debug("mangaName",mangaName);
 	var chapterNb = release.chapter;
@@ -68,17 +75,17 @@ var isNewRelease= function(release,mangas,callback){
 	}
 }
 var isNewManga = function(mangas,mangaName){
-	Logger.trace("isNewManga");
+	//Logger.trace("isNewManga");
 	if(Object.keys(mangas).indexOf(mangaName)>-1){
 		return false;
 	}else{
-		Logger.dev('new manga',mangaName);
+		Logger.debug('new manga',mangaName);
 		mangas[mangaName] = new Manga(mangaName,0,0);
 		return true;
 	}
 }
 var getLastChapterNb = function(mangaName,mangas,callback){
-    Logger.trace("getLastChapter");
+    //Logger.trace("getLastChapter");
     Logger.debug("mangaName",mangaName);
 		var lastChapterNb = mangas[mangaName].lastChapterNb;
 		Logger.debug("lastChapterNb",lastChapterNb);

@@ -50,7 +50,7 @@ exports.addNewChapter = function(release,mangaId,callback){
 exports.addNewManga = function(release,callback){
 	Logger.trace("DAL.addNewManga");
 	var data = querystring.stringify({
-		'manga[name]':release.manga,
+		'manga[name]':release.mangaId,
 		'manga[display_name]':release.manga
 	});
 	postData('/mangas',data,function(){
