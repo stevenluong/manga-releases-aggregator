@@ -78,7 +78,7 @@ var warnUsers = function(releases,callback){
 
 var getNewReleases = function(releases,callback){
 	Logger.trace("getNewReleases");
-	//releases = filterReleases(releases);
+	releases = filterReleases(releases);
 	var newReleases = new Array();
 	DAL.getMangas(function(mangas){
 		releases.forEach(function(release){
@@ -94,17 +94,16 @@ var getNewReleases = function(releases,callback){
 		callback(newReleases);
 	});
 }
-//var filterReleases = function(releases){
-//	var filteredReleases = new Array();
-//	//Logger.debug("releases",releases);
-//	Object.keys(releases).forEach(function(key){
-//		var release = releases[key];
-//		if(Config.selectedMangas.indexOf(release.manga)>-1){
-//			filteredReleases.push(release);
-//		};
-//	});
-//	return filteredReleases;
-//}
+var filterReleases = function(releases){
+	var filteredReleases = new Array();
+	//Logger.debug("releases",releases);
+	releases.forEach(function(release){
+		if(Config.selectedMangas.indexOf(release.manga)>-1){
+			filteredReleases.push(release);
+		};
+	});
+	return filteredReleases;
+}
 var isNewRelease= function(release,mangas,callback){
 	Logger.trace("isNewRelease");
 	var mangaName = release.manga;
