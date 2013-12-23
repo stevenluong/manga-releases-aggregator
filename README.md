@@ -17,6 +17,7 @@ Get started
 - Clone the repository
 
 - Install yql :```npm install yql```
+- Install nodemailer :```npm install nodemailer```
 
 - Fill the file config.js
 
